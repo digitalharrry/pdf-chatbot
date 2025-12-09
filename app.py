@@ -160,7 +160,7 @@ def answer_question(query, kb):
 
 # ---------- Streamlit UI ----------
 st.set_page_config(page_title="Groq PDF Chatbot", page_icon="⚡")
-st.title("⚡ PDF Chatbot with Groq")
+st.title("⚡ PDF Chatbot")
 st.caption("Ask questions and get answers *only* from your uploaded PDF, using Groq for reasoning.")
 
 # Sidebar: upload & process PDF
@@ -216,3 +216,4 @@ if user_input:
                     st.write("---")
 
     st.session_state["chat_history"].append({"role": "assistant", "content": answer})
+
