@@ -114,6 +114,8 @@ def retrieve_relevant_chunks(query, kb, top_k=4):
 
 
 # ---------- LLM answer via Groq ----------
+from groq import APIStatusError
+
 def answer_question(query, kb):
     relevant_chunks, scores = retrieve_relevant_chunks(query, kb, top_k=4)
     context = "\n\n---\n\n".join(relevant_chunks)
@@ -128,18 +130,32 @@ def answer_question(query, kb):
 
     user_prompt = f"CONTEXT:\n{context}\n\nQUESTION: {query}"
 
-    completion = client.chat.completions.create(
-        model="llama-3.1-8b-instant",  # Cheap & fast Groq model
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=0.1,
-        max_tokens=512,
-    )
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.1,
+            max_tokens=512,
+        )
+        answer = completion.choices[0].message.content
+        return answer, relevant_chunks, scores
 
-    answer = completion.choices[0].message.content
-    return answer, relevant_chunks, scores
+    except APIStatusError as e:
+        # Show something human-friendly in the UI
+        st.error(
+            f"Groq API error (status {e.status_code}).\n\n"
+            "Most common reasons:\n"
+            "- Invalid or expired API key\n"
+            "- Not enough quota / access for this model\n"
+            "- Temporary server issue on Groq side\n\n"
+            "If this keeps happening, check your key and Groq dashboard."
+        )
+        # Also print full error to logs for debugging
+        print("Groq APIStatusError:", e.status_code, getattr(e, 'body', None))
+        st.stop()
 
 
 # ---------- Streamlit UI ----------
